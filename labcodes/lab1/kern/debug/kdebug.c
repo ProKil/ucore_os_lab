@@ -299,8 +299,8 @@ print_stackframe(void) {
       *    (3.3) cprintf("\n");
       *    (3.4) call print_debuginfo(eip-1) to print the C calling function name and line number, etc.
       *    (3.5) popup a calling stackframe
-      *           NOTICE: the calling funciton's return addr eip  = ss:[ebp+4]
-      *                   the calling funciton's ebp = ss:[ebp]
+      *           NOTICE: the calling function's return addr eip  = ss:[ebp+4]
+      *                   the calling function's ebp = ss:[ebp]
       */
 }
 
