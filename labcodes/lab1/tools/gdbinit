@@ -1,4 +1,7 @@
+define hook-stop
+x/i $pc
+end
 file bin/kernel
 target remote :1234
-break kern_init
+break *0x7c00
 continue
