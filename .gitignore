@@ -20,3 +20,6 @@ a.out
 chytesting
 disk0
 *.orig
+._.DS_Store
+._.gitignore
+._report.md
