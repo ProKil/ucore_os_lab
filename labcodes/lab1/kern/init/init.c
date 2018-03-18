@@ -83,7 +83,7 @@ lab1_print_cur_status(void) {
 
 static void
 lab1_switch_to_user(void) {
-    //LAB1 CHALLENGE 1 : DONE
+    //LAB1 CHALLENGE 1 : 2015011347
     asm volatile (
 	    "sub $0x8, %%esp \n"
 	    "int %0 \n"
@@ -95,7 +95,7 @@ lab1_switch_to_user(void) {
 
 static void
 lab1_switch_to_kernel(void) {
-    //LAB1 CHALLENGE 1 :  DONE
+    //LAB1 CHALLENGE 1 : 2015011347
     asm volatile (
 	    "int %0 \n"
 	    "movl %%ebp, %%esp \n"
