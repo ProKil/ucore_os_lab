@@ -119,6 +119,28 @@ alloc_proc(void) {
      *     uint32_t lab6_stride;                       // FOR LAB6 ONLY: the current stride of the process
      *     uint32_t lab6_priority;                     // FOR LAB6 ONLY: the priority of process, set by lab6_set_priority(uint32_t)
      */
+    proc->wait_state = 0;
+    proc->cptr = proc->yptr = proc->optr = NULL;
+    // special members
+    proc->state = PROC_UNINIT;                      // Process state
+    proc->pid = -1;                   // Process ID
+    proc->cr3 = boot_cr3;                              // CR3 register: the base addr of Page Directroy Table(PDT)
+    proc->parent = NULL;                 // the parent process
+    // others clear to 0
+    proc->runs = 0;                                   // the running times of Proces
+    proc->kstack = 0;                           // Process kernel stack
+    proc->need_resched = 0;                 // bool value: need to be rescheduled to release CPU?
+    proc->mm = NULL;                       // Process's memory management field
+    memset(&(proc->context), 0, sizeof(struct context));                     // Switch here to run process
+    proc->tf = NULL;                       // Trap frame for current interrupt
+    proc->flags = 0;                             // Process flag
+    memset(proc->name, 0, PROC_NAME_LEN);               // Process name 
+    proc->rq = NULL;
+    list_init(&(proc->run_link));
+    proc->time_slice = 0;
+    skew_heap_init(&(proc->lab6_run_pool));
+    proc->lab6_stride = 0;
+    proc->lab6_priority = 0;
     }
     return proc;
 }
@@ -413,6 +435,33 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
 	*    update step 1: set child proc's parent to current process, make sure current process's wait_state is 0
 	*    update step 5: insert proc_struct into hash_list && proc_list, set the relation links of process
     */
+    if ((proc = alloc_proc()) == NULL) {    // 1
+        goto fork_out;
+    }
+    proc->parent = current;                 // answer
+    assert(current->wait_state == 0);       // LAB5
+    if (setup_kstack(proc) != 0) {          // 2
+        goto bad_fork_cleanup_proc;
+    }
+    if (copy_mm(clone_flags, proc) != 0) {  // 3
+        goto bad_fork_cleanup_kstack;
+    }
+    copy_thread(proc, stack, tf);           // 4
+
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    {
+        proc->pid = get_pid();              // 5, answer
+        // nr_process++;                     // grade
+        hash_proc(proc);
+        // list_add(&proc_list, &(proc->list_link)); //grade
+        set_links(proc);
+
+    }
+    local_intr_restore(intr_flag);
+
+    wakeup_proc(proc);                      // 6
+    ret = proc->pid;                        // 7
 	
 fork_out:
     return ret;
@@ -612,6 +661,12 @@ load_icode(unsigned char *binary, size_t size) {
      *          tf_eip should be the entry point of this binary program (elf->e_entry)
      *          tf_eflags should be set to enable computer to produce Interrupt
      */
+    tf->tf_cs = USER_CS;
+    tf->tf_ds = tf->tf_es = tf->tf_ss = USER_DS;
+    tf->tf_esp = USTACKTOP;
+    tf->tf_eip = elf->e_entry;
+    tf->tf_eflags = FL_IF;
+    
     ret = 0;
 out:
     return ret;

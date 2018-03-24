@@ -23,3 +23,5 @@ disk0
 ._.DS_Store
 ._.gitignore
 ._report.md
+._*
+labcodes/lab7/lab7
